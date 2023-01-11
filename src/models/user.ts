@@ -9,13 +9,11 @@ let {
     SALT_ROUNDS
 } = process.env;
 
-let pepper: string = (BCRYPT_PASSWORD as unknown) as string;
-let saltRounds: string = (SALT_ROUNDS as unknown) as string;
+const pepper: string = (BCRYPT_PASSWORD as unknown) as string;
+const saltRounds: string = (SALT_ROUNDS as unknown) as string;
 
 export type User = {
     id?: string | number;
-    first_name?: string;
-    last_name?: string;
     username: string;
     password: string;
 }
@@ -36,20 +34,24 @@ export default class UserStore {
 
     async create(u: User): Promise<User> {
         try {
-            const sql = 'INSERT INTO users (username, password_digest) VALUES ($1, $2) RETURNING *';
-            const hash = bcrypt.hashSync(
-                u.password + pepper,
-                parseInt(saltRounds)
-            );
             const conn = await client.connect();
-            const result = await conn.query(sql, [u.username, hash]);
+            const sql = 'INSERT INTO users (username, password_digest) VALUES($1, $2) RETURNING *';
+
+            const hash = bcrypt.hashSync(
+            u.password + pepper, 
+            parseInt(saltRounds)
+            );
+
             conn.release();
-            const newUser = result.rows[0];
-            return newUser;
-        } catch (err) {
-            throw new Error(`Couldn't add user. Error: ${err}`);
+            
+            const result = await conn.query(sql, [u.username, hash]);
+            const user = result.rows[0];
+
+            return user
+        } catch(err) {
+                throw new Error(`unable create user (${u.username}): ${err}`)
+            } 
         }
-    }
 
     async update(u: User): Promise<User> {
         try {
