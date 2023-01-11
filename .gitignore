@@ -1,4 +1,4 @@
 /node_modules
 /.env
 /yarn.lock
-/yarn-error.lock
+/yarn-error.log
