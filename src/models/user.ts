@@ -33,6 +33,7 @@ export default class UserStore {
     }
 
     async create(u: User): Promise<User> {
+        let user: User;
         try {
             const sql = 'INSERT INTO users (username, hash_password) VALUES($1, $2) RETURNING *';
 
@@ -41,11 +42,16 @@ export default class UserStore {
             parseInt(saltRounds)
             );
             const conn = await client.connect();
+            const userExists = await conn.query('SELECT * FROM users WHERE username = $1', [u.username]);
+
+            if (userExists.rows.length) {
+                user = userExists.rows[0];
+            } else {
             const result = await conn.query(sql, [u.username, hash]);
+            user = result.rows[0];
+            }
 
             conn.release();
-            
-            const user = result.rows[0];
 
             return user
         } catch(err) {
@@ -98,20 +104,23 @@ export default class UserStore {
 
     async authenticate(username: string, password: string): Promise<User | null> {
         try {
-            const sql = 'SELECT password_digest FROM users WHERE username = $1';
+            const sql = 'SELECT * FROM users WHERE username = $1';
             const conn = await client.connect();
             const result = await conn.query(sql, [username]);
-            
+            conn.release();
+
             console.log(password + pepper);
 
             if (result.rows.length) {
                 const user = result.rows[0];
 
-                console.log(user);
+                const isPasswordValid = await bcrypt.compare(`${password}${pepper}`, user.hash_password);
 
-                if (bcrypt.compareSync(password + pepper, user.password_digest)) {
+                if (isPasswordValid) {
                     return user;
                 }
+            } else {
+                console.log(`Account doesn't exist. Please create one`);
             }
 
             return null;
