@@ -1,4 +1,4 @@
-import express, {Request, Response} from 'express';
+import express, {Request, Response, NextFunction} from 'express';
 import ArticleStore, {Article} from '../models/article';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -36,14 +36,6 @@ const create = async (req: Request, res: Response) => {
     };
 
     try {
-        jwt.verify(req.body.token, TOKEN_SECRET);
-    } catch (error) {
-        res.status(401);
-        res.json(`Invalid token. ${error}`);
-        return;
-    }
-
-    try {
     const newArticle: Article = await store.create(articleN);
         res.json(newArticle);
     } catch (err) {
@@ -62,7 +54,7 @@ const update = async (req: Request, res: Response) => {
     }
 };
 
-const remove = async (req: Request, res: Response) => {
+const destroy = async (req: Request, res: Response) => {
     try {
         const deleted: Article = await store.delete(req.params.id);
         res.json(deleted);
@@ -72,13 +64,24 @@ const remove = async (req: Request, res: Response) => {
     }
 };
 
+const verifyAuthToken = (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const authorizationHeader = req.headers.authorization as unknown as string;
+        const token = authorizationHeader.split(' ')[1];
+        const decoded = jwt.verify(token, TOKEN_SECRET);
+        next();
+    } catch (error) {
+        res.status(401);
+        res.json(error);
+    }
+}
 
 const articlesRoutes = (app: express.Application) => {
     app.get('/articles', index);
     app.get('/articles/:id', show);
-    app.post('/articles', create);
-    app.put('/articles:id', update);
-    app.delete('/articles/:id', remove);
+    app.post('/articles', verifyAuthToken, create);
+    app.put('/articles:id', verifyAuthToken, update);
+    app.delete('/articles/:id', verifyAuthToken, destroy);
 };
 
 export default articlesRoutes;
