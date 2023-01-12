@@ -4,7 +4,7 @@ import client from '../database';
 
 dotenv.config();
 
-let {
+const {
     BCRYPT_PASSWORD,
     SALT_ROUNDS
 } = process.env;
@@ -34,17 +34,17 @@ export default class UserStore {
 
     async create(u: User): Promise<User> {
         try {
-            const conn = await client.connect();
-            const sql = 'INSERT INTO users (username, password_digest) VALUES($1, $2) RETURNING *';
+            const sql = 'INSERT INTO users (username, hash_password) VALUES($1, $2) RETURNING *';
 
-            const hash = bcrypt.hashSync(
-            u.password + pepper, 
+            const hash = await bcrypt.hash(
+            `${u.password}${pepper}`, 
             parseInt(saltRounds)
             );
+            const conn = await client.connect();
+            const result = await conn.query(sql, [u.username, hash]);
 
             conn.release();
             
-            const result = await conn.query(sql, [u.username, hash]);
             const user = result.rows[0];
 
             return user
@@ -55,9 +55,9 @@ export default class UserStore {
 
     async update(u: User): Promise<User> {
         try {
-            const sql = 'UPDATE users SET username = $4, password_digest = $6 WHERE id = $1';
-            const hash = bcrypt.hashSync(
-                u.password + pepper,
+            const sql = 'UPDATE users SET username = ($4), hash_password = $6 WHERE id = ($1)';
+            const hash = await bcrypt.hash(
+                `${u.password}${pepper}`,
                 parseInt(saltRounds)
             );
             const conn = await client.connect();
