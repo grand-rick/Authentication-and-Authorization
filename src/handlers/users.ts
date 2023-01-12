@@ -59,7 +59,7 @@ const destroy = async (req: Request, res: Response) => {
 
 const authenticate = async (req: Request, res: Response) => {
     try {
-        const isAuthentic: User | null = await store.authenticate(req.body.username, req.body.password);
+        const isAuthentic = await store.authenticate(req.body.username, req.body.password);
         res.json(isAuthentic);
     } catch (err) {
         res.status(400);
@@ -74,7 +74,7 @@ const usersRoutes = (app: express.Application) => {
     app.post('/users', create);
     app.put('/users:id', update);
     app.delete('/users/:id', destroy);
-    app.get('/users/signup/', authenticate);
+    app.get('/signup', authenticate);
 };
 
 export default usersRoutes;
