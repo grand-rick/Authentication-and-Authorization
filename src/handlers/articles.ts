@@ -1,5 +1,11 @@
 import express, {Request, Response} from 'express';
 import ArticleStore, {Article} from '../models/article';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const TOKEN_SECRET = process.env.TOKEN_SECRET as unknown as string;
 
 const store = new ArticleStore();
 
@@ -24,13 +30,26 @@ const show = async (req: Request, res: Response) => {
 };
 
 const create = async (req: Request, res: Response) => {
-      try {
-        const newArticle: Article = await store.create({title: req.body.title, content: req.body.content});
-         res.json(newArticle);
-      } catch (err) {
-         res.status(400);
-         res.json(err);
-      }
+    const articleN = {
+        title: req.body.title,
+        content: req.body.content
+    };
+
+    try {
+        jwt.verify(req.body.token, TOKEN_SECRET);
+    } catch (error) {
+        res.status(401);
+        res.json(`Invalid token. ${error}`);
+        return;
+    }
+
+    try {
+    const newArticle: Article = await store.create(articleN);
+        res.json(newArticle);
+    } catch (err) {
+        res.status(400);
+        res.json(err);
+    }
 };
 
 const update = async (req: Request, res: Response) => {
