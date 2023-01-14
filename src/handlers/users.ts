@@ -78,10 +78,10 @@ const authenticate = async (req: Request, res: Response) => {
 const usersRoutes = (app: express.Application) => {
     app.get('/users', index);
     app.get('/users/:id', show);
-    app.post('/users', create);
     app.put('/users:id', update);
     app.delete('/users/:id', destroy);
-    app.get('/signup', authenticate);
+    app.post('/signup', create);
+    app.get('/login', authenticate);
 };
 
 export default usersRoutes;
