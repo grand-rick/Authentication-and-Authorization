@@ -4,6 +4,8 @@ import cors from 'cors';
 import morgan from 'morgan';
 import articlesRoutes from './handlers/articles';
 import usersRoutes from './handlers/users';
+import ordersRoutes from './handlers/orders';
+import productsRoutes from './handlers/products';
 
 const app: express.Application = express();
 const port: number = 3000;
@@ -19,6 +21,8 @@ app.use(morgan('common'));
 
 articlesRoutes(app);
 usersRoutes(app);
+productsRoutes(app);
+ordersRoutes(app);
 
 app.get('/', (req: Request, res: Response) => {
     res.send('This is the homepage');
